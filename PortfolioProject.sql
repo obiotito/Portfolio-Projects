@@ -12,6 +12,10 @@ Using Excel, the csv file was first formatted to a table and two tables were dra
 Finally, the two tables were imported into the PorfolioProject database.
 */
 
+/*
+	Skills used: Joins, CTE's, Temp Tables, Windows Functions, Aggregate Functions, Creating Views, Converting Data Types
+*/
+
 
 --Displaying all the data
 
@@ -96,11 +100,13 @@ Point 2:
 
 SELECT
 	location,
-	MAX(CAST(total_deaths AS int)) AS Death_Count
+	MAX(CAST(total_deaths AS int)) AS Death_Count,
+	RANK() OVER (ORDER BY MAX(CAST(total_deaths AS int)) DESC) AS Ranking
 	FROM PortfolioProject..CovidDeaths
 	WHERE continent IS NOT NULL 
 	GROUP BY location
 	ORDER BY Death_Count DESC;
+
 
 
 --- Continents with the Highest Death Count
@@ -137,6 +143,27 @@ SELECT
 	FROM PortfolioProject..CovidDeaths
 	WHERE continent IS NOT NULL;
 	
+
+
+SELECT 
+	location, 
+	SUM(CAST(new_deaths as int)) as TotalDeathCount
+FROM PortfolioProject..CovidDeaths
+WHERE continent IS NULL
+	AND location NOT IN ('World', 'European Union', 'International', 'Upper middle income', 'High Income', 'Lower middle income', 'Low income')
+GROUP BY location
+ORDER BY TotalDeathCount DESC;
+
+
+---Death Count by Income
+SELECT 
+	location, 
+	SUM(CAST(new_deaths as int)) as TotalDeathCount
+FROM PortfolioProject..CovidDeaths
+WHERE continent IS NULL
+	AND location NOT IN ('World', 'European Union', 'International', 'Europe', 'Asia', 'North America', 'South America', 'Africa', 'Oceania')
+GROUP BY location
+ORDER BY TotalDeathCount DESC;
 
 
 --- Identifying total number of vaccinations per population
@@ -223,6 +250,17 @@ SELECT
 
 ---Creating Views for vizualization
 
+CREATE VIEW Global_Deaths AS
+	SELECT 
+		SUM(new_cases) AS Total_Cases,
+		SUM(CAST(new_deaths AS int)) AS Total_Deaths,
+		(SUM(CAST(new_deaths AS int))/SUM(new_cases)) * 100 AS Death_Percentage
+	FROM PortfolioProject..CovidDeaths
+	WHERE continent IS NOT NULL;
+
+
+
+
 CREATE VIEW Death_Rate_Ireland AS
 	SELECT 
 		location,
@@ -258,11 +296,12 @@ CREATE VIEW Highest_Infection_Rate AS
 
 CREATE VIEW Death_Count_by_Continent AS
 	SELECT 
-		continent,
-		MAX(CAST(Total_deaths AS int)) AS Death_Count
+		location, 
+		SUM(CAST(new_deaths as int)) as TotalDeathCount
 	FROM PortfolioProject..CovidDeaths
-	WHERE continent IS NOT NULL
-	GROUP BY continent;
+	WHERE continent IS NULL
+		AND location NOT IN ('World', 'European Union', 'International', 'Upper middle income', 'High Income', 'Lower middle income', 'Low income')
+	GROUP BY location;
 
 
 
@@ -273,6 +312,31 @@ CREATE VIEW Death_Count_by_Location AS
 	FROM PortfolioProject..CovidDeaths
 	WHERE continent IS NOT NULL 
 	GROUP BY location;
+
+
+
+CREATE VIEW Death_Count_by_Income AS
+	SELECT 
+		location, 
+		SUM(CAST(new_deaths as int)) as TotalDeathCount
+	FROM PortfolioProject..CovidDeaths
+	WHERE continent IS NULL
+		AND location NOT IN ('World', 'European Union', 'International', 'Europe', 'Asia', 'North America', 'South America', 'Africa', 'Oceania')
+	GROUP BY location;
+
+
+
+CREATE VIEW Highest_Infection_Rate AS
+	SELECT 
+		location,
+		population,
+		MAX(total_cases) AS Total_Cases,
+		MAX((total_cases/population) * 100) AS Highest_Infection_Rate
+	FROM PortfolioProject..CovidDeaths
+	WHERE continent IS NOT NULL
+	GROUP BY location, population;
+
+
 
 
 
